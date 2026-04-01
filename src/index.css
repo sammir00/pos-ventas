@@ -1,17 +1,95 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+@theme {
+  --color-error: #ff7351;
+  --color-surface-tint: #ff8d86;
+  --color-surface-container-high: #1d2025;
+  --color-surface-container-low: #111318;
+  --color-on-tertiary-container: #400072;
+  --color-surface-variant: #23262c;
+  --color-background: #0c0e12;
+  --color-on-primary: #65000a;
+  --color-primary-container: #ff766f;
+  --color-secondary-fixed: #ffc2ca;
+  --color-tertiary-fixed: #ce9bff;
+  --color-primary-fixed-dim: #ff5a56;
+  --color-inverse-primary: #ba1b24;
+  --color-tertiary-container: #c791fc;
+  --color-tertiary-dim: #bc86f0;
+  --color-secondary: #f67992;
+  --color-on-background: #f6f6fc;
+  --color-inverse-surface: #f9f9ff;
+  --color-on-secondary-container: #ffc0c9;
+  --color-on-tertiary: #4c147d;
+  --color-primary: #ff8d86;
+  --color-on-error: #450900;
+  --color-on-secondary-fixed: #6a0a29;
+  --color-surface-container: #171a1f;
+  --color-secondary-dim: #f3768f;
+  --color-on-surface-variant: #aaabb0;
+  --color-surface-container-lowest: #000000;
+  --color-surface-dim: #0c0e12;
+  --color-outline-variant: #46484d;
+  --color-secondary-fixed-dim: #ffaeba;
+  --color-on-error-container: #ffd2c8;
+  --color-error-dim: #d53d18;
+  --color-surface: #0c0e12;
+  --color-on-primary-fixed-variant: #600009;
+  --color-outline: #74757a;
+  --color-inverse-on-surface: #53555a;
+  --color-on-secondary-fixed-variant: #912b45;
+  --color-primary-fixed: #ff766f;
+  --color-on-surface: #f6f6fc;
+  --color-error-container: #b92902;
+  --color-surface-container-highest: #23262c;
+  --color-surface-bright: #292c32;
+  --color-primary-dim: #ff716a;
+  --color-on-primary-container: #4e0006;
+  --color-tertiary-fixed-dim: #c18cf6;
+  --color-secondary-container: #83203b;
+  --color-on-tertiary-fixed: #270048;
+  --color-on-tertiary-fixed-variant: #511b82;
+  --color-on-primary-fixed: #000000;
+  --color-tertiary: #d1a2ff;
+  --color-on-secondary: #4d001a;
+
+  --font-headline: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+
+  --radius: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--background);
-  color: var(--foreground);
+@layer base {
+  body {
+    background-color: theme('colors.background');
+    color: theme('colors.on-background');
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .glass-panel {
+    background: rgba(35, 38, 44, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .magma-glow {
+    background: radial-gradient(circle at center, rgba(255, 141, 134, 0.15) 0%, transparent 70%);
+  }
+  /* Custom utility for hiding scrollbar while keeping functionality */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

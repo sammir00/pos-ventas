@@ -1,55 +1,54 @@
 import { historyData } from '../data/mockData';
-import { Clock, Search, Receipt } from 'lucide-react';
 
 export default function History() {
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 flex items-center gap-3">
-          <Clock className="w-8 h-8 text-indigo-500" />
-          Historial de Ventas
+    <div className="flex-1 p-6 overflow-y-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-black text-on-surface tracking-tight mb-1 flex items-center gap-3 uppercase">
+          <span className="material-symbols-outlined text-primary">analytics</span>
+          Reports
         </h1>
-        <p className="text-slate-500">Registro detallado de transacciones y tickets emitidos</p>
+        <p className="text-sm text-on-surface-variant">Detailed transaction logs and ticket history</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+      <div className="glass-panel rounded-xl border border-white/5 overflow-hidden">
+        <div className="p-4 border-b border-white/5 flex justify-between items-center">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-            <input type="text" placeholder="Buscar ticket..." className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+            <input type="text" placeholder="Search tickets..." className="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-xl w-64 text-sm text-on-surface focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/50 outline-none" />
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-100">
-                <th className="py-4 px-6 font-medium">No. Ticket</th>
-                <th className="py-4 px-6 font-medium">Fecha y Hora</th>
-                <th className="py-4 px-6 font-medium">Cliente</th>
-                <th className="py-4 px-6 font-medium">Artículos</th>
-                <th className="py-4 px-6 font-medium">Método</th>
+              <tr className="text-on-surface-variant text-[10px] uppercase tracking-widest border-b border-white/5">
+                <th className="py-4 px-6 font-medium">Ticket No.</th>
+                <th className="py-4 px-6 font-medium">Date & Time</th>
+                <th className="py-4 px-6 font-medium">Customer</th>
+                <th className="py-4 px-6 font-medium">Items</th>
+                <th className="py-4 px-6 font-medium">Method</th>
                 <th className="py-4 px-6 font-medium text-right">Total</th>
-                <th className="py-4 px-6 font-medium text-center">Acciones</th>
+                <th className="py-4 px-6 font-medium text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-white/5">
               {historyData.map(tx => (
-                <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-4 px-6 font-mono text-indigo-600 font-medium">{tx.id}</td>
-                  <td className="py-4 px-6 text-slate-600">{new Date(tx.date).toLocaleString('es-ES')}</td>
-                  <td className="py-4 px-6 text-slate-600">{tx.customer}</td>
-                  <td className="py-4 px-6 text-slate-500 text-sm">
-                    {tx.items.length} prod. (cant: {tx.items.reduce((s, i) => s + i.quantity, 0)})
+                <tr key={tx.id} className="hover:bg-white/5 transition-colors group">
+                  <td className="py-4 px-6 font-mono text-primary font-bold text-sm">{tx.id}</td>
+                  <td className="py-4 px-6 text-on-surface-variant text-xs">{new Date(tx.date).toLocaleString('es-ES')}</td>
+                  <td className="py-4 px-6 text-on-surface text-xs font-medium">{tx.customer}</td>
+                  <td className="py-4 px-6 text-on-surface-variant text-xs">
+                    {tx.items.length} prod. (qty: {tx.items.reduce((s, i) => s + i.quantity, 0)})
                   </td>
                   <td className="py-4 px-6">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${tx.method === 'Efectivo' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${tx.method === 'Efectivo' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-blue-500/10 text-blue-400'}`}>
                       {tx.method}
                     </span>
                   </td>
-                  <td className="py-4 px-6 font-bold text-slate-900 text-right">${tx.total.toFixed(2)}</td>
+                  <td className="py-4 px-6 font-bold text-primary text-sm text-right">${tx.total.toFixed(2)}</td>
                   <td className="py-4 px-6 text-center">
-                    <button className="text-slate-400 hover:text-indigo-600 transition-colors tooltip" title="Ver Ticket">
-                      <Receipt className="w-5 h-5 mx-auto" />
+                    <button className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/10" title="View Ticket">
+                      <span className="material-symbols-outlined text-sm">receipt_long</span>
                     </button>
                   </td>
                 </tr>
@@ -61,3 +60,4 @@ export default function History() {
     </div>
   );
 }
+

@@ -1,63 +1,72 @@
 import { productsData } from '../data/mockData';
-import { Package, Plus, Edit2, Trash2, Search } from 'lucide-react';
 
 export default function Products() {
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-end mb-8">
+    <div className="flex-1 p-6 overflow-y-auto space-y-6">
+      <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 flex items-center gap-3">
-            <Package className="w-8 h-8 text-indigo-500" />
-            Catálogo de Productos
+          <h1 className="text-2xl font-black text-on-surface tracking-tight mb-1 flex items-center gap-3 uppercase">
+            <span className="material-symbols-outlined text-primary">inventory_2</span>
+            Inventory
           </h1>
-          <p className="text-slate-500">Administra el inventario y precios de los productos del minimarket</p>
+          <p className="text-sm text-on-surface-variant">Manage products, pricing, and stock levels</p>
         </div>
-        <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/20">
-          <Plus className="w-5 h-5" /> Nuevo Producto
+        <button className="bg-gradient-to-br from-red-500 to-rose-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(239,68,68,0.3)] active:scale-[0.98]">
+          <span className="material-symbols-outlined text-sm">add</span> New Product
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+      <div className="glass-panel rounded-xl border border-white/5 overflow-hidden">
+        <div className="p-4 border-b border-white/5 flex justify-between items-center">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-            <input type="text" placeholder="Buscar productos..." className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+            <input type="text" placeholder="Search products..." className="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-xl w-64 text-sm text-on-surface focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/50 outline-none" />
           </div>
-          <span className="text-sm text-slate-500 font-medium">Total: {productsData.length} productos</span>
+          <span className="text-[10px] text-on-surface-variant font-medium uppercase tracking-widest">{productsData.length} products</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-100">
-                <th className="py-4 px-6 font-medium">Producto</th>
-                <th className="py-4 px-6 font-medium">Categoría</th>
-                <th className="py-4 px-6 font-medium">Código</th>
-                <th className="py-4 px-6 font-medium">Precio</th>
+              <tr className="text-on-surface-variant text-[10px] uppercase tracking-widest border-b border-white/5">
+                <th className="py-4 px-6 font-medium">Product</th>
+                <th className="py-4 px-6 font-medium">Category</th>
+                <th className="py-4 px-6 font-medium">SKU</th>
+                <th className="py-4 px-6 font-medium">Price</th>
                 <th className="py-4 px-6 font-medium text-center">Stock</th>
-                <th className="py-4 px-6 font-medium text-right">Acciones</th>
+                <th className="py-4 px-6 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-white/5">
               {productsData.map(product => (
-                <tr key={product.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-3 px-6 font-medium text-slate-900 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0">
-                      {product.image && <img src={product.image} alt={product.name} className="w-full h-full object-cover" />}
+                <tr key={product.id} className="hover:bg-white/5 transition-colors group">
+                  <td className="py-3 px-6 font-bold text-on-surface text-sm flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-surface-container overflow-hidden shrink-0">
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-surface-container-high">
+                          <span className="material-symbols-outlined text-on-surface-variant text-sm">shopping_bag</span>
+                        </div>
+                      )}
                     </div>
                     {product.name}
                   </td>
-                  <td className="py-3 px-6 text-slate-500">{product.category}</td>
-                  <td className="py-3 px-6 text-slate-400 text-sm font-mono">{product.barcode}</td>
-                  <td className="py-3 px-6 font-bold text-slate-900">${product.price.toFixed(2)}</td>
+                  <td className="py-3 px-6 text-on-surface-variant text-xs">{product.category}</td>
+                  <td className="py-3 px-6 text-on-surface-variant text-xs font-mono">{product.barcode}</td>
+                  <td className="py-3 px-6 font-bold text-primary text-sm">${product.price.toFixed(2)}</td>
                   <td className="py-3 px-6 text-center">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${product.stock > 20 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {product.stock} un.
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${product.stock > 20 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                      {product.stock} units
                     </span>
                   </td>
                   <td className="py-3 px-6">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
-                      <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                      </button>
+                      <button className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -69,3 +78,4 @@ export default function Products() {
     </div>
   );
 }
+
