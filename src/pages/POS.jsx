@@ -1,13 +1,55 @@
-import { useState } from 'react';
-import { productsData, categoriesData } from '../data/mockData';
+import { useState, useEffect } from 'react';
+import { getProducts, getProductsByCategory } from '../services/productService';
+import { getCategories } from '../services/categoryService';
+import { createTransaction } from '../services/transactionService';
+import { getSettings } from '../services/settingsService';
 
 export default function POS() {
   const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(['Todos']);
+  const [loading, setLoading] = useState(true);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [error, setError] = useState(null);
+  const [taxRate, setTaxRate] = useState(12);
 
-  const filteredProducts = productsData.filter(product => {
-    return selectedCategory === 'Todos' || product.category === selectedCategory;
-  });
+  // Cargar categorías y configuración al inicio
+  useEffect(() => {
+    async function loadInitial() {
+      try {
+        const [cats, settings] = await Promise.all([
+          getCategories(),
+          getSettings(),
+        ]);
+        setCategories(cats);
+        if (settings.tax_rate) {
+          setTaxRate(parseFloat(settings.tax_rate));
+        }
+      } catch (err) {
+        console.error('Error loading initial data:', err);
+      }
+    }
+    loadInitial();
+  }, []);
+
+  // Cargar productos cuando cambia la categoría
+  useEffect(() => {
+    async function loadProducts() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getProductsByCategory(selectedCategory);
+        setProducts(data);
+      } catch (err) {
+        setError('Error al cargar productos');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProducts();
+  }, [selectedCategory]);
 
   const addToCart = (product) => {
     setCart(prev => {
@@ -32,13 +74,35 @@ export default function POS() {
   const clearAll = () => setCart([]);
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.12; // 12% tax as per old behavior
+  const tax = subtotal * (taxRate / 100);
   const total = subtotal + tax;
 
-  const handleCheckout = () => {
-    if (cart.length === 0) return;
-    alert(`Cobro realizado exitosamente por $${total.toFixed(2)}`);
-    setCart([]);
+  const handleCheckout = async () => {
+    if (cart.length === 0 || checkingOut) return;
+
+    setCheckingOut(true);
+    try {
+      const transaction = await createTransaction({
+        subtotal,
+        tax,
+        total,
+        customerName: 'Consumidor Final',
+        paymentMethod: 'Efectivo',
+        items: cart,
+      });
+
+      alert(`✅ Venta completada\nTicket: ${transaction.ticket_number}\nTotal: $${total.toFixed(2)}`);
+      setCart([]);
+
+      // Recargar productos para actualizar stock
+      const data = await getProductsByCategory(selectedCategory);
+      setProducts(data);
+    } catch (err) {
+      alert('❌ Error al procesar la venta: ' + err.message);
+      console.error(err);
+    } finally {
+      setCheckingOut(false);
+    }
   };
 
   return (
@@ -47,7 +111,7 @@ export default function POS() {
       <section className="flex-1 p-6 overflow-y-auto space-y-6">
         {/* Categories Scroll */}
         <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {categoriesData.map((cat, index) => {
+          {categories.map((cat) => {
             const isActive = selectedCategory === cat;
             return (
               <button
@@ -65,73 +129,105 @@ export default function POS() {
           })}
         </div>
 
-        {/* Bento-style Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredProducts.map((product, index) => {
-            // First item can be featured to mimic HTML structure
-            const isFeatured = index === 0;
+        {/* Error State */}
+        {error && (
+          <div className="bg-error/10 border border-error/30 text-error rounded-xl p-4 text-sm flex items-center gap-3">
+            <span className="material-symbols-outlined">error</span>
+            {error}
+            <button onClick={() => setSelectedCategory(selectedCategory)} className="ml-auto text-xs font-bold uppercase tracking-widest hover:underline">
+              Reintentar
+            </button>
+          </div>
+        )}
 
-            if (isFeatured) {
+        {/* Loading State */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="glass-panel rounded-xl border border-white/5 p-3 space-y-3 animate-pulse">
+                <div className="aspect-square rounded-lg bg-surface-container-high"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-surface-container-high rounded w-3/4"></div>
+                  <div className="h-3 bg-surface-container-high rounded w-1/2"></div>
+                </div>
+                <div className="h-8 bg-surface-container-high rounded-lg"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Bento-style Product Grid */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {products.length === 0 && !loading && (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-on-surface-variant">
+                <span className="material-symbols-outlined text-5xl mb-4 opacity-30">inventory_2</span>
+                <p className="text-sm font-medium">No hay productos en esta categoría</p>
+              </div>
+            )}
+            {products.map((product, index) => {
+              const isFeatured = index === 0 && products.length > 1;
+
+              if (isFeatured) {
+                return (
+                  <div 
+                    key={product.id} 
+                    onClick={() => addToCart(product)}
+                    className="col-span-1 lg:col-span-2 row-span-1 group relative overflow-hidden rounded-xl glass-panel border border-white/5 hover:border-primary/30 transition-all duration-300 cursor-pointer"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-80 z-10"></div>
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-64 bg-surface-container-high flex flex-col items-center justify-center text-on-surface-variant group-hover:scale-105 transition-transform duration-500">
+                        <span className="material-symbols-outlined text-4xl mb-2">shopping_bag</span>
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-0 w-full p-4 z-20 flex justify-between items-end">
+                      <div>
+                        <span className="bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm mb-2 inline-block">Featured</span>
+                        <h3 className="text-xl font-black text-on-surface tracking-tight">{product.name}</h3>
+                        <p className="text-on-surface-variant text-xs">{product.category}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-primary mb-2">${product.price.toFixed(2)}</p>
+                        <button className="bg-primary text-on-primary p-2 rounded-lg shadow-lg active:scale-90 transition-transform">
+                          <span className="material-symbols-outlined pointer-events-none">add_shopping_cart</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div 
                   key={product.id} 
+                  className="group glass-panel rounded-xl border border-white/5 hover:border-primary/30 transition-all duration-300 p-3 space-y-3 cursor-pointer flex flex-col"
                   onClick={() => addToCart(product)}
-                  className="col-span-1 lg:col-span-2 row-span-1 group relative overflow-hidden rounded-xl glass-panel border border-white/5 hover:border-primary/30 transition-all duration-300 cursor-pointer"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-80 z-10"></div>
-                  {product.image ? (
-                    <img src={product.image} alt={product.name} className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-64 bg-surface-container-high flex flex-col items-center justify-center text-on-surface-variant group-hover:scale-105 transition-transform duration-500">
-                      <span className="material-symbols-outlined text-4xl mb-2">shopping_bag</span>
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 left-0 w-full p-4 z-20 flex justify-between items-end">
-                    <div>
-                      <span className="bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm mb-2 inline-block">Featured</span>
-                      <h3 className="text-xl font-black text-on-surface tracking-tight">{product.name}</h3>
-                      <p className="text-on-surface-variant text-xs">{product.category}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-primary mb-2">${product.price.toFixed(2)}</p>
-                      <button className="bg-primary text-on-primary p-2 rounded-lg shadow-lg active:scale-90 transition-transform">
-                        <span className="material-symbols-outlined pointer-events-none">add_shopping_cart</span>
-                      </button>
+                  <div className="aspect-square rounded-lg overflow-hidden relative">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:scale-110 transition-transform duration-500">
+                        <span className="material-symbols-outlined text-4xl">shopping_bag</span>
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2 px-2 py-1 bg-surface-container-lowest/80 backdrop-blur-md rounded text-primary text-[10px] font-bold">
+                      ${product.price.toFixed(2)}
                     </div>
                   </div>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <h4 className="font-bold text-on-surface text-sm truncate">{product.name}</h4>
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{product.category}</p>
+                  </div>
+                  <button className="w-full py-2 bg-white/5 hover:bg-primary/10 hover:text-primary rounded-lg text-xs font-bold transition-all active:scale-[0.98]">
+                    ADD TO TICKET
+                  </button>
                 </div>
               );
-            }
-
-            return (
-              <div 
-                key={product.id} 
-                className="group glass-panel rounded-xl border border-white/5 hover:border-primary/30 transition-all duration-300 p-3 space-y-3 cursor-pointer flex flex-col"
-                onClick={() => addToCart(product)}
-              >
-                <div className="aspect-square rounded-lg overflow-hidden relative">
-                  {product.image ? (
-                    <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:scale-110 transition-transform duration-500">
-                      <span className="material-symbols-outlined text-4xl">shopping_bag</span>
-                    </div>
-                  )}
-                  <div className="absolute top-2 right-2 px-2 py-1 bg-surface-container-lowest/80 backdrop-blur-md rounded text-primary text-[10px] font-bold">
-                    ${product.price.toFixed(2)}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1 flex-1">
-                  <h4 className="font-bold text-on-surface text-sm truncate">{product.name}</h4>
-                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{product.category}</p>
-                </div>
-                <button className="w-full py-2 bg-white/5 hover:bg-primary/10 hover:text-primary rounded-lg text-xs font-bold transition-all active:scale-[0.98]">
-                  ADD TO TICKET
-                </button>
-              </div>
-            );
-          })}
-        </div>
+            })}
+          </div>
+        )}
       </section>
 
       {/* Current Ticket Panel */}
@@ -168,8 +264,8 @@ export default function POS() {
             cart.map(item => (
               <div key={item.id} className="flex gap-3 group">
                 <div className="w-12 h-12 rounded-lg bg-surface-container overflow-hidden shrink-0 relative">
-                  {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-on-surface-variant bg-surface-container-high">
                       <span className="material-symbols-outlined text-sm">shopping_bag</span>
@@ -213,7 +309,7 @@ export default function POS() {
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-on-surface-variant">
-              <span>Tax (12%)</span>
+              <span>Tax ({taxRate}%)</span>
               <span>${tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-xl font-black text-on-surface pt-2">
@@ -233,10 +329,17 @@ export default function POS() {
           
           <button 
             onClick={handleCheckout}
-            disabled={cart.length === 0}
-            className="w-full py-4 bg-gradient-to-br from-red-500 to-rose-600 text-white font-black text-sm rounded-xl shadow-[0_10px_30px_rgba(239,68,68,0.4)] hover:shadow-[0_10px_40px_rgba(239,68,68,0.6)] active:scale-[0.98] transition-all uppercase tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={cart.length === 0 || checkingOut}
+            className="w-full py-4 bg-gradient-to-br from-red-500 to-rose-600 text-white font-black text-sm rounded-xl shadow-[0_10px_30px_rgba(239,68,68,0.4)] hover:shadow-[0_10px_40px_rgba(239,68,68,0.6)] active:scale-[0.98] transition-all uppercase tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Complete Sale
+            {checkingOut ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                Procesando...
+              </>
+            ) : (
+              'Complete Sale'
+            )}
           </button>
         </div>
       </section>
